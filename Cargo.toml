@@ -5,4 +5,4 @@ edition = "2024"
 
 [dependencies]
 dotenv = "0.15"
-diesel = { version = "1.4", features = ["mysql"] }
+diesel = { version = "2.1", features = ["mysql"] }
