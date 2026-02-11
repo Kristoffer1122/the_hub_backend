@@ -7,6 +7,7 @@ pub mod api {
     #[derive(Debug, Queryable, Selectable)]
     #[diesel(table_name = games)]
     #[diesel(check_for_backend(Mysql))]
+    #[allow(dead_code)]
     pub struct Game {
         pub id: i32,
         pub title: String,
