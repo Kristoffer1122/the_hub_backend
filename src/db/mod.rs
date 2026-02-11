@@ -1,10 +1,13 @@
 pub mod api {
+
     use crate::schema::games;
+    use axum::Json;
     use diesel::mysql::{Mysql, MysqlConnection};
     use diesel::prelude::*;
     use dotenv::dotenv;
+    use serde::Serialize;
 
-    #[derive(Debug, Queryable, Selectable)]
+    #[derive(Debug, Queryable, Selectable, QueryableByName, Serialize)]
     #[diesel(table_name = games)]
     #[diesel(check_for_backend(Mysql))]
     #[allow(dead_code)]
@@ -36,29 +39,14 @@ pub mod api {
         Ok(conn)
     }
 
-    fn get_games() {
-        let user = dotenv::var("DB_USER");
-        println!("db user: {:?}", user);
+    pub async fn get_games() -> Json<Vec<Game>> {
+        let mut conn = connect_db().expect("Failed to connect to DB");
 
-        // save connection, but its waste
-        match connect_db() {
-            Ok(mut _conn) => {
-                println!("Querying database");
-                let results = games::table
-                    .select(Game::as_select())
-                    .load::<Game>(&mut _conn);
-                println!("Games: {:?}", results);
-            }
-            Err(e) => {
-                println!("Error connecting to database: {}", e);
-            }
-        }
-    }
+        let results = games::table
+            .select(Game::as_select())
+            .load::<Game>(&mut conn)
+            .expect("Error loading games");
 
-    pub fn query_db(req: &str) {
-        if req == "/spill" {
-            println!("Page is Spill");
-            get_games();
-        }
+        Json(results) // ← This is like res.json(results) in Express
     }
 }
