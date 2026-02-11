@@ -28,7 +28,7 @@ pub mod api {
         let db_name = std::env::var("DB_NAME")?;
 
         let url = format!(
-            "mysql://{}:{}@localhost:{}/{}",
+            "mysql://{}:{}@host.docker.internal:{}/{}",
             &user, &password, &port, &db_name,
         );
 
