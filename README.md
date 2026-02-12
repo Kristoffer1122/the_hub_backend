@@ -22,6 +22,18 @@ db_user = "USERNAME HERE"
 db_password = "PASSWORD HERE"
 ```
 
+However you will have to change the Table struct to follow your table structure.
+
+Example:
+```toml
+    pub struct Table {
+        pub id: i32,
+        pub title: String,
+        pub genre: String,
+        pub utgivelsesdato: Option<chrono::NaiveDate>,
+    }
+```
+
 
 ### This does not save any of your data
 https://www.shera.no/privacy-policy
