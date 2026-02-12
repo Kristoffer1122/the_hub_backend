@@ -11,7 +11,7 @@ pub mod api {
     #[diesel(table_name = games)]
     #[diesel(check_for_backend(Mysql))]
     #[allow(dead_code)]
-    pub struct Game {
+    pub struct Table {
         pub id: i32,
         pub title: String,
         pub genre: String,
@@ -39,12 +39,12 @@ pub mod api {
         Ok(conn)
     }
 
-    pub async fn get_games() -> Json<Vec<Game>> {
+    pub async fn get_games() -> Json<Vec<Table>> {
         let mut conn = connect_db().expect("Failed to connect to DB");
 
         let results = games::table
-            .select(Game::as_select())
-            .load::<Game>(&mut conn)
+            .select(Table::as_select())
+            .load::<Table>(&mut conn)
             .expect("Error loading games");
 
         Json(results) // ← This is like res.json(results) in Express
