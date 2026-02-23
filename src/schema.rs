@@ -7,6 +7,7 @@ diesel::table! {
         title -> Varchar,
         #[max_length = 255]
         genre -> Varchar,
+        image_link -> Nullable<Varchar>,
         utgivelsesdato -> Nullable<Date>,
     }
 }
