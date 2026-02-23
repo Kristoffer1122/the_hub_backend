@@ -15,6 +15,7 @@ pub mod api {
         pub id: i32,
         pub title: String,
         pub genre: String,
+        pub image_link: Option<String>,
         pub utgivelsesdato: Option<chrono::NaiveDate>,
     }
 
@@ -47,6 +48,7 @@ pub mod api {
             .load::<Table>(&mut conn)
             .expect("Error loading games");
 
-        Json(results) // ← This is like res.json(results) in Express
+        // json the data
+        Json(results)
     }
 }
