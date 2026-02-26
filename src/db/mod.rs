@@ -1,11 +1,11 @@
 pub mod api {
 
     use crate::schema::games;
-    use axum::Json;
+    use axum::{Json, extract::Path, response::IntoResponse};
     use diesel::mysql::{Mysql, MysqlConnection};
     use diesel::prelude::*;
     use dotenv::dotenv;
-    use serde::Serialize;
+    use serde::{Deserialize, Serialize};
 
     #[derive(Debug, Queryable, Selectable, QueryableByName, Serialize)]
     #[diesel(table_name = games)]
@@ -13,6 +13,14 @@ pub mod api {
     #[allow(dead_code)]
     pub struct Table {
         pub id: i32,
+        pub title: String,
+        pub genre: String,
+        pub image_link: Option<String>,
+        pub utgivelsesdato: Option<chrono::NaiveDate>,
+    }
+
+    #[derive(Deserialize)]
+    pub struct CreateGame {
         pub title: String,
         pub genre: String,
         pub image_link: Option<String>,
@@ -40,7 +48,7 @@ pub mod api {
         Ok(conn)
     }
 
-    pub async fn get_games() -> Json<Vec<Table>> {
+    pub async fn get_game() -> Json<Vec<Table>> {
         let mut conn = connect_db().expect("Failed to connect to DB");
 
         let results = games::table
@@ -50,5 +58,40 @@ pub mod api {
 
         // json the data
         Json(results)
+    }
+
+    pub async fn update_game(Path(id): Path<i32>) {
+        let mut conn = connect_db().expect("Failed to connect to DB");
+
+        // Update the title of the game with id 1
+        diesel::update(games::table.filter(games::id.eq(id)))
+            .set(games::title.eq("Updated Title"))
+            .execute(&mut conn)
+            .expect("Error updating game");
+    }
+
+    pub async fn delete_game(Path(id): Path<i32>) {
+        let mut conn = connect_db().expect("Failed to connect to DB");
+
+        // Delete the game with id from path
+        diesel::delete(games::table.filter(games::id.eq(id)))
+            .execute(&mut conn)
+            .expect("Error deleting game");
+    }
+
+    pub async fn create_game(Json(payload): Json<CreateGame>) -> impl IntoResponse {
+        let mut conn = connect_db().expect("Failed to connect to DB");
+
+        // Insert a new game into the database
+        diesel::insert_into(games::table)
+            .values((
+                games::title.eq(payload.title),
+                games::genre.eq(payload.genre),
+                games::image_link.eq(payload.image_link),
+                games::utgivelsesdato.eq(payload.utgivelsesdato),
+            ))
+            .execute(&mut conn)
+            .expect("Error inserting game");
+        println!("Game created successfully");
     }
 }
