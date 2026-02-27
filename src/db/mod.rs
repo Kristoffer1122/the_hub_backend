@@ -1,7 +1,7 @@
 pub mod api {
 
     use crate::schema::games;
-    use axum::{Json, extract::Path, response::IntoResponse};
+    use axum::{Json, extract::Path, http::StatusCode, response::IntoResponse};
     use diesel::mysql::{Mysql, MysqlConnection};
     use diesel::prelude::*;
     use dotenv::dotenv;
@@ -11,7 +11,7 @@ pub mod api {
     #[diesel(table_name = games)]
     #[diesel(check_for_backend(Mysql))]
     #[allow(dead_code)]
-    pub struct Table {
+    pub struct Game {
         pub id: i32,
         pub title: String,
         pub genre: String,
@@ -48,22 +48,20 @@ pub mod api {
         Ok(conn)
     }
 
-    pub async fn get_game() -> Json<Vec<Table>> {
+    pub async fn get_games() -> impl IntoResponse {
         let mut conn = connect_db().expect("Failed to connect to DB");
 
         let results = games::table
-            .select(Table::as_select())
-            .load::<Table>(&mut conn)
+            .load::<Game>(&mut conn)
             .expect("Error loading games");
 
-        // json the data
-        Json(results)
+        (StatusCode::OK, Json(results))
     }
 
     pub async fn update_game(Path(id): Path<i32>) {
         let mut conn = connect_db().expect("Failed to connect to DB");
 
-        // Update the title of the game with id 1
+        // Update the title of the game with id from path
         diesel::update(games::table.filter(games::id.eq(id)))
             .set(games::title.eq("Updated Title"))
             .execute(&mut conn)
@@ -92,6 +90,6 @@ pub mod api {
             ))
             .execute(&mut conn)
             .expect("Error inserting game");
-        println!("Game created successfully");
+        (StatusCode::CREATED, "Game created successfully")
     }
 }
