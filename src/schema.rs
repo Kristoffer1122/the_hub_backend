@@ -12,3 +12,13 @@ diesel::table! {
         utgivelsesdato -> Nullable<Date>,
     }
 }
+
+diesel::table! {
+    weekly_recaps (id) {
+        id -> Integer,
+        week_number -> Integer,
+        year -> Integer,
+        recap -> Text,
+        generated_at -> Datetime,
+    }
+}
