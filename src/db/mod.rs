@@ -1,6 +1,7 @@
 pub mod api {
 
     use crate::schema::games;
+    use crate::schema::weekly_recaps;
     use axum::{Json, extract::Path, http::StatusCode, response::IntoResponse};
     use diesel::mysql::{Mysql, MysqlConnection};
     use diesel::prelude::*;
@@ -19,12 +20,31 @@ pub mod api {
         pub utgivelsesdato: Option<chrono::NaiveDate>,
     }
 
+    #[derive(Debug, Queryable, Selectable, QueryableByName, Serialize)]
+    #[diesel(table_name = weekly_recaps)]
+    #[diesel(check_for_backend(Mysql))]
+    #[allow(dead_code)]
+    pub struct WeeklyRecap {
+        pub id: i32,
+        pub week_number: i32,
+        pub year: i32,
+        pub recap: String,
+        pub generated_at: chrono::NaiveDateTime,
+    }
+
     #[derive(Deserialize)]
     pub struct CreateGame {
         pub title: String,
         pub genre: String,
         pub image_link: Option<String>,
         pub utgivelsesdato: Option<chrono::NaiveDate>,
+    }
+
+    #[derive(Deserialize)]
+    pub struct CreateWeeklyRecap {
+        pub week_number: i32,
+        pub year: i32,
+        pub recap: String,
     }
 
     pub fn connect_db() -> Result<MysqlConnection, Box<dyn std::error::Error>> {
@@ -102,5 +122,60 @@ pub mod api {
             .execute(&mut conn)
             .expect("Error inserting game");
         (StatusCode::CREATED, "Game created successfully".to_string())
+    }
+
+    // Weekly Recap endpoints
+    pub async fn get_weekly_recap(Path((week, year)): Path<(i32, i32)>) -> impl IntoResponse {
+        let mut conn = connect_db().expect("Failed to connect to DB");
+
+        let result = weekly_recaps::table
+            .filter(weekly_recaps::week_number.eq(week))
+            .filter(weekly_recaps::year.eq(year))
+            .first::<WeeklyRecap>(&mut conn)
+            .optional()
+            .expect("Error loading recap");
+
+        match result {
+            Some(recap) => (StatusCode::OK, Json(Some(recap))),
+            None => (StatusCode::NOT_FOUND, Json(None)),
+        }
+    }
+
+    pub async fn save_weekly_recap(Json(payload): Json<CreateWeeklyRecap>) -> impl IntoResponse {
+        let mut conn = connect_db().expect("Failed to connect to DB");
+
+        // Check if recap already exists for this week/year
+        let existing = weekly_recaps::table
+            .filter(weekly_recaps::week_number.eq(payload.week_number))
+            .filter(weekly_recaps::year.eq(payload.year))
+            .first::<WeeklyRecap>(&mut conn)
+            .optional()
+            .expect("Error checking for existing recap");
+
+        if existing.is_some() {
+            // Update existing recap
+            diesel::update(weekly_recaps::table
+                .filter(weekly_recaps::week_number.eq(payload.week_number))
+                .filter(weekly_recaps::year.eq(payload.year)))
+                .set((
+                    weekly_recaps::recap.eq(&payload.recap),
+                    weekly_recaps::generated_at.eq(chrono::Utc::now().naive_utc()),
+                ))
+                .execute(&mut conn)
+                .expect("Error updating recap");
+            return (StatusCode::OK, "Recap updated successfully".to_string());
+        }
+
+        // Insert new recap
+        diesel::insert_into(weekly_recaps::table)
+            .values((
+                weekly_recaps::week_number.eq(payload.week_number),
+                weekly_recaps::year.eq(payload.year),
+                weekly_recaps::recap.eq(payload.recap),
+                weekly_recaps::generated_at.eq(chrono::Utc::now().naive_utc()),
+            ))
+            .execute(&mut conn)
+            .expect("Error inserting recap");
+        (StatusCode::CREATED, "Recap saved successfully".to_string())
     }
 }
