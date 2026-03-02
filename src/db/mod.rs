@@ -80,6 +80,17 @@ pub mod api {
     pub async fn create_game(Json(payload): Json<CreateGame>) -> impl IntoResponse {
         let mut conn = connect_db().expect("Failed to connect to DB");
 
+        // Check if game already exists
+        let existing = games::table
+            .filter(games::title.eq(&payload.title))
+            .first::<Game>(&mut conn)
+            .optional()
+            .expect("Error checking for duplicate");
+
+        if existing.is_some() {
+            return (StatusCode::CONFLICT, "Game with this title already exists".to_string());
+        }
+
         // Insert a new game into the database
         diesel::insert_into(games::table)
             .values((
@@ -90,6 +101,6 @@ pub mod api {
             ))
             .execute(&mut conn)
             .expect("Error inserting game");
-        (StatusCode::CREATED, "Game created successfully")
+        (StatusCode::CREATED, "Game created successfully".to_string())
     }
 }
