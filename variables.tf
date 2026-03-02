@@ -13,7 +13,7 @@ variable "db_user" {
 variable "db_name" {
   description = "MySQL database name"
   type        = string
-  default     = "gamelibrary"
+  default     = "the_hub"
 }
 
 variable "db_port" {
