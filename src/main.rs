@@ -11,6 +11,7 @@ async fn main() {
         .route("/creategame", post(db::api::create_game))
         .route("/deletegame/{id}", post(db::api::delete_game))
         .route("/recap/{week}/{year}", get(db::api::get_weekly_recap))
+        .route("/recap/latest", get(db::api::get_latest_recap))
         .route("/saverecap", post(db::api::save_weekly_recap));
 
     // can unwrap if port is unavaliable
