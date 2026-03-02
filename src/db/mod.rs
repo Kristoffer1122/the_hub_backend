@@ -17,7 +17,7 @@ pub mod api {
         pub title: String,
         pub genre: String,
         pub image_link: Option<String>,
-        pub utgivelsesdato: Option<chrono::NaiveDate>,
+        pub release_date: Option<chrono::NaiveDate>,
     }
 
     #[derive(Debug, Queryable, Selectable, QueryableByName, Serialize)]
@@ -37,7 +37,7 @@ pub mod api {
         pub title: String,
         pub genre: String,
         pub image_link: Option<String>,
-        pub utgivelsesdato: Option<chrono::NaiveDate>,
+        pub release_date: Option<chrono::NaiveDate>,
     }
 
     #[derive(Deserialize)]
@@ -108,7 +108,10 @@ pub mod api {
             .expect("Error checking for duplicate");
 
         if existing.is_some() {
-            return (StatusCode::CONFLICT, "Game with this title already exists".to_string());
+            return (
+                StatusCode::CONFLICT,
+                "Game with this title already exists".to_string(),
+            );
         }
 
         // Insert a new game into the database
@@ -117,7 +120,7 @@ pub mod api {
                 games::title.eq(payload.title),
                 games::genre.eq(payload.genre),
                 games::image_link.eq(payload.image_link),
-                games::utgivelsesdato.eq(payload.utgivelsesdato),
+                games::release_date.eq(payload.release_date),
             ))
             .execute(&mut conn)
             .expect("Error inserting game");
@@ -141,6 +144,21 @@ pub mod api {
         }
     }
 
+    pub async fn get_latest_recap() -> impl IntoResponse {
+        let mut conn = connect_db().expect("Failed to connect to DB");
+
+        let result = weekly_recaps::table
+            .order(weekly_recaps::id.desc())
+            .first::<WeeklyRecap>(&mut conn)
+            .optional()
+            .expect("Error loading latest recap");
+
+        match result {
+            Some(recap) => (StatusCode::OK, Json(Some(recap))),
+            None => (StatusCode::NOT_FOUND, Json(None)),
+        }
+    }
+
     pub async fn save_weekly_recap(Json(payload): Json<CreateWeeklyRecap>) -> impl IntoResponse {
         let mut conn = connect_db().expect("Failed to connect to DB");
 
@@ -154,15 +172,17 @@ pub mod api {
 
         if existing.is_some() {
             // Update existing recap
-            diesel::update(weekly_recaps::table
-                .filter(weekly_recaps::week_number.eq(payload.week_number))
-                .filter(weekly_recaps::year.eq(payload.year)))
-                .set((
-                    weekly_recaps::recap.eq(&payload.recap),
-                    weekly_recaps::generated_at.eq(chrono::Utc::now().naive_utc()),
-                ))
-                .execute(&mut conn)
-                .expect("Error updating recap");
+            diesel::update(
+                weekly_recaps::table
+                    .filter(weekly_recaps::week_number.eq(payload.week_number))
+                    .filter(weekly_recaps::year.eq(payload.year)),
+            )
+            .set((
+                weekly_recaps::recap.eq(&payload.recap),
+                weekly_recaps::generated_at.eq(chrono::Utc::now().naive_utc()),
+            ))
+            .execute(&mut conn)
+            .expect("Error updating recap");
             return (StatusCode::OK, "Recap updated successfully".to_string());
         }
 
