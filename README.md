@@ -35,5 +35,5 @@ Example:
 ```
 
 
-### This does not save any of your data
+### This does not save any of your Personal data
 https://www.shera.no/privacy-policy
