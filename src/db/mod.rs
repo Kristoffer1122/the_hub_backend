@@ -55,10 +55,11 @@ pub mod api {
         let password = std::env::var("DB_PASSWORD")?;
         let port = std::env::var("DB_PORT")?;
         let db_name = std::env::var("DB_NAME")?;
+        let db_host = std::env::var("DB_HOST").unwrap_or_else(|_| "host.docker.internal".to_string());
 
         let url = format!(
-            "mysql://{}:{}@host.docker.internal:{}/{}",
-            &user, &password, &port, &db_name,
+            "mysql://{}:{}@{}:{}/{}",
+            &user, &password, &db_host, &port, &db_name,
         );
 
         let conn = MysqlConnection::establish(&url)
