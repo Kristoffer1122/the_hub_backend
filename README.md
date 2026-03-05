@@ -1,6 +1,6 @@
 ## A Webserver written in rust
 A webserver written in rust,
-all it does is return JSON from a Mariadb or Mysql database.
+Rust backend for the_hub, a website for IM students at Elvebakken that gives a weekly recap, shows classes and yearplan.
 
 
 ### Deployment
