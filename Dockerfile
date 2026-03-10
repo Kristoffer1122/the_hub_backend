@@ -35,9 +35,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 # Copy the compiled binary from the builder
-COPY --from=builder /app/target/release/gamelibrary .
+COPY --from=builder /app/target/release/rust_backend .
 
 EXPOSE 7878
 
 # Just run the compiled binary
-CMD ["./gamelibrary"]
+CMD ["./rust_backend"]
