@@ -67,7 +67,10 @@ pub mod api {
         let conn = MysqlConnection::establish(&url)
             .map_err(|e| format!("Failed to connect to the database: {}", e))?;
 
-        println!("Successfully connected to the database");
+        println!(
+            "Successfully connected to database {} as {}",
+            &db_host, &user
+        );
         Ok(conn)
     }
 
