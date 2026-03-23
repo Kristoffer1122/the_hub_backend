@@ -22,3 +22,5 @@ diesel::table! {
         generated_at -> Datetime,
     }
 }
+
+diesel::allow_tables_to_appear_in_same_query!(games, weekly_recaps,);
