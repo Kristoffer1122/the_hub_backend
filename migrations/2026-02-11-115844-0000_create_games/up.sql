@@ -4,5 +4,5 @@ CREATE TABLE games (
     title VARCHAR(255) NOT NULL,
     genre VARCHAR(255) NOT NULL,
     image_link VARCHAR(1024) NOT NULL,
-    utgivelsesdato DATE
+    release_date DATE
 );
