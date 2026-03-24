@@ -1,39 +1,54 @@
-## A Webserver written in rust
-A webserver written in rust,
-Rust backend for the_hub, a website for IM students at Elvebakken that gives a weekly recap, shows classes and yearplan.
+# The Hub - Backend
 
+Rust (Axum + Diesel) API server for The Hub application.
 
-### Deployment
-I recommend using Terraform and Docker to deploy this software
-However you can also just run the Dockerfile or use the binary directly, but I will not cover that in this README.
+## Running (Recommended)
 
+Run everything from the monorepo using Docker Compose:
 
 ```bash
-terraform apply
+git clone --recurse-submodules https://github.com/Kristoffer1122/the_hub.git
+cd the_hub
+docker compose up --build
 ```
 
-### Use your own database
-If you want to use your own database make your own `terrafrom.tfvars` file in the project root.
+See the [monorepo README](https://github.com/Kristoffer1122/the_hub) for full instructions.
 
-```toml
-db_name = "NAME HERE"
-db_port = 3306
-db_user = "USERNAME HERE"
-db_password = "PASSWORD HERE"
+## Prerequisites (local dev only)
+
+- Rust toolchain
+- `diesel_cli` (`cargo install diesel_cli --no-default-features --features mysql`)
+- A running MariaDB instance
+
+## Local Development
+
+Copy `.env` and configure your database connection:
+
+```bash
+cp .env .env.local
+# edit DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, DB_PORT
 ```
 
-However you will have to change the Table struct to follow your table structure.
+Run migrations and start the server:
 
-Example:
-```toml
-    pub struct Table {
-        pub id: i32,
-        pub title: String,
-        pub genre: String,
-        pub utgivelsesdato: Option<chrono::NaiveDate>,
-    }
+```bash
+diesel migration run
+cargo run
 ```
 
+Server listens on `http://localhost:7878`.
+
+## Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `DB_HOST` | Database host | `localhost` |
+| `DB_PORT` | Database port | `3306` |
+| `DB_USER` | Database user | - |
+| `DB_PASSWORD` | Database password | - |
+| `DB_NAME` | Database name | `the_hub` |
+| `AZURE_OPENAI_ENDPOINT` | Azure AI Foundry endpoint | - |
+| `AZURE_OPENAI_DEPLOYMENT_NAME` | AI agent name | `scheduler` |
 
 ### This does not save any of your Personal data
 https://www.shera.no/privacy-policy
