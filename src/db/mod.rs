@@ -1,6 +1,5 @@
 pub mod api {
 
-    use crate::schema::games;
     use crate::schema::weekly_recaps;
     use axum::{Json, extract::Path, http::StatusCode, response::IntoResponse};
     use chrono::Datelike;
@@ -8,18 +7,6 @@ pub mod api {
     use diesel::prelude::*;
     use dotenv::dotenv;
     use serde::{Deserialize, Serialize};
-
-    #[derive(Debug, Queryable, Selectable, QueryableByName, Serialize)]
-    #[diesel(table_name = games)]
-    #[diesel(check_for_backend(Mysql))]
-    #[allow(dead_code)]
-    pub struct Game {
-        pub id: i32,
-        pub title: String,
-        pub genre: String,
-        pub image_link: Option<String>,
-        pub release_date: Option<chrono::NaiveDate>,
-    }
 
     #[derive(Debug, Queryable, Selectable, QueryableByName, Serialize)]
     #[diesel(table_name = weekly_recaps)]
@@ -32,15 +19,6 @@ pub mod api {
         pub recap: String,
         pub generated_at: chrono::NaiveDateTime,
     }
-
-    #[derive(Deserialize)]
-    pub struct CreateGame {
-        pub title: String,
-        pub genre: String,
-        pub image_link: Option<String>,
-        pub release_date: Option<chrono::NaiveDate>,
-    }
-
     #[derive(Deserialize)]
     pub struct CreateWeeklyRecap {
         pub week_number: i32,
@@ -74,67 +52,8 @@ pub mod api {
         Ok(conn)
     }
 
-    pub async fn get_games() -> impl IntoResponse {
-        let mut conn = connect_db().expect("Failed to connect to DB");
-
-        let results = games::table
-            .load::<Game>(&mut conn)
-            .expect("Error loading games");
-
-        (StatusCode::OK, Json(results))
-    }
-
-    pub async fn update_game(Path(id): Path<i32>) {
-        let mut conn = connect_db().expect("Failed to connect to DB");
-
-        // Update the title of the game with id from path
-        diesel::update(games::table.filter(games::id.eq(id)))
-            .set(games::title.eq("Updated Title"))
-            .execute(&mut conn)
-            .expect("Error updating game");
-    }
-
-    pub async fn delete_game(Path(id): Path<i32>) {
-        let mut conn = connect_db().expect("Failed to connect to DB");
-
-        // Delete the game with id from path
-        diesel::delete(games::table.filter(games::id.eq(id)))
-            .execute(&mut conn)
-            .expect("Error deleting game");
-    }
-
-    pub async fn create_game(Json(payload): Json<CreateGame>) -> impl IntoResponse {
-        let mut conn = connect_db().expect("Failed to connect to DB");
-
-        // Check if game already exists
-        let existing = games::table
-            .filter(games::title.eq(&payload.title))
-            .first::<Game>(&mut conn)
-            .optional()
-            .expect("Error checking for duplicate");
-
-        if existing.is_some() {
-            return (
-                StatusCode::CONFLICT,
-                "Game with this title already exists".to_string(),
-            );
-        }
-
-        // Insert a new game into the database
-        diesel::insert_into(games::table)
-            .values((
-                games::title.eq(payload.title),
-                games::genre.eq(payload.genre),
-                games::image_link.eq(payload.image_link),
-                games::release_date.eq(payload.release_date),
-            ))
-            .execute(&mut conn)
-            .expect("Error inserting game");
-        (StatusCode::CREATED, "Game created successfully".to_string())
-    }
-
     // Weekly Recap endpoints
-    pub async fn get_weekly_recap(Path((week, year)): Path<(i32, i32)>) -> impl IntoResponse {
+    pub async fn get_weekly_recap(Path((year, week)): Path<(i32, i32)>) -> impl IntoResponse {
         let mut conn = connect_db().expect("Failed to connect to DB");
 
         let result = weekly_recaps::table
