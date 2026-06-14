@@ -126,7 +126,7 @@ pub mod api {
 
     #[derive(Deserialize)]
     pub struct GenerateRecapRequest {
-        pub azure_token: String,
+        pub azure_token: Option<String>,
     }
 
     #[derive(Deserialize)]
@@ -154,6 +154,7 @@ pub mod api {
         dotenv().ok();
 
         let endpoint = std::env::var("AZURE_OPENAI_ENDPOINT").unwrap_or_else(|_| "".to_string());
+        let api_key = std::env::var("AZURE_OPENAI_API_KEY").unwrap_or_else(|_| "".to_string());
         let deployment_name = std::env::var("AZURE_OPENAI_DEPLOYMENT_NAME")
             .unwrap_or_else(|_| "scheduler".to_string());
 
@@ -181,13 +182,23 @@ pub mod api {
         );
 
         let client = reqwest::Client::new();
-        let response = client
+        let mut request = client
             .post(&url)
             .header("Content-Type", "application/json")
-            .header("Authorization", format!("Bearer {}", payload.azure_token))
-            .json(&serde_json::json!({ "input": input }))
-            .send()
-            .await;
+            .json(&serde_json::json!({ "input": input }));
+
+        if !api_key.is_empty() {
+            request = request.header("api-key", api_key);
+        } else if let Some(azure_token) = payload.azure_token {
+            request = request.header("Authorization", format!("Bearer {}", azure_token));
+        } else {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Missing Azure authentication. Set AZURE_OPENAI_API_KEY or provide an Azure bearer token.".to_string(),
+            );
+        }
+
+        let response = request.send().await;
 
         let response = match response {
             Ok(r) => r,
